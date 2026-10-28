@@ -1,0 +1,18 @@
+# Fuentes empresariales privadas y original descargado (solo locales).
+/Docs/
+/fuentes/
+/*.zip
+/wiki/
+/tmp/
+/output/
+/node_modules/
+**/node_modules/
+**/dist/
+**/build/
+**/coverage/
+**/.env*
+!**/.env.example
+*.log
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
