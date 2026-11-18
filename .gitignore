@@ -1,18 +1,21 @@
-# Fuentes empresariales privadas y original descargado (solo locales).
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Material empresarial y memoria privada: solo locales.
 /Docs/
+/Plan de mejora/
 /fuentes/
-/*.zip
 /wiki/
 /tmp/
 /output/
-/node_modules/
-**/node_modules/
-**/dist/
-**/build/
-**/coverage/
-**/.env*
-!**/.env.example
-*.log
+/*.zip
+
+# Archivos generados del entorno de trabajo.
 *.tsbuildinfo
-.DS_Store
 Thumbs.db

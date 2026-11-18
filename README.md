@@ -1,16 +1,20 @@
-# Natural by Roberto Cuello
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
+</div>
 
-La versión original de AI Studio se conserva en el ZIP de esta carpeta. La copia de trabajo de la landing está en `sitio/`. Las instrucciones del asistente están en `AGENTS.md` y la memoria en `wiki/index.md`.
+# Run and deploy your AI Studio app
 
-Desde PowerShell en esta carpeta:
+This contains everything you need to run your app locally.
 
-```powershell
-./scripts/proyecto.ps1 ver
-./scripts/proyecto.ps1 comprobar
-```
+View your app in AI Studio: https://ai.studio/apps/a58221c0-18ae-4cc6-b147-35706762cd08
 
-La vista local usa http://127.0.0.1:3000; no es una publicación. Para detenerla, Ctrl+C en la consola que la ejecuta. Para recuperar dependencias, usar `./scripts/proyecto.ps1 instalar` con el archivo de bloqueo existente.
+## Run Locally
 
-Puedes seguir agregando documentos, fotografías y logos en `Docs/`, sin ordenarlos previamente. El asistente los revisará y actualizará el catálogo. Los originales, la wiki interna y los archivos de revisión quedan fuera del repositorio compartible por defecto. La wiki contiene rutas y conocimiento organizado; no incluye copias de conversaciones ni información clínica de pacientes.
+**Prerequisites:**  Node.js
 
-Esta landing no utiliza Gemini en su código actual. No hace falta crear una clave para verla; las variables de ejemplo pertenecen a la plantilla de AI Studio. No guardar claves en el navegador.
+
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`
