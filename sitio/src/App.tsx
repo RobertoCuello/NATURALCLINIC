@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import ClinicCarousel from './components/ClinicCarousel';
+import PartnersPage from './components/PartnersPage';
 
 interface Treatment {
   id: string;
@@ -15,12 +16,6 @@ interface Treatment {
   alt: string;
   ctaText: string;
   whatsappText: string;
-  details: {
-    duration: string;
-    sessions: string;
-    material: string;
-    overview: string;
-  } | null;
 }
 
 interface Testimonial {
@@ -46,14 +41,7 @@ const TREATMENTS: Treatment[] = [
     alt: 'Diseño de sonrisa en técnica indirecta de alta precisión',
     ctaText: 'Quiero mi diseño de sonrisa',
     whatsappText:
-      'Hola, quisiera consultar por Diseño en Resina Indirecta en Natural.',
-    details: {
-      duration: 'Estabilidad estética superior',
-      sessions: '2 citas personalizadas',
-      material: 'Biomateriales poliméricos y cerómeros de alta densidad',
-      overview:
-        'Confección extraoral sobre modelos de alta precisión que garantiza adaptación gingival impecable, brillo duradero y mínima intervención sobre tu estructura dental.',
-    },
+      'Hola, quisiera agendar mi valoración para Diseño en Resina Indirecta en Natural.',
   },
   {
     id: 'ceramica',
@@ -64,26 +52,18 @@ const TREATMENTS: Treatment[] = [
     alt: 'Diseño de sonrisa en cerámica realizado por el Dr. Roberto Cuello',
     ctaText: 'Quiero mi diseño en cerámica',
     whatsappText:
-      'Hola, quisiera consultar por Diseño en Cerámica en Natural.',
-    details: {
-      duration: 'Alta longevidad (10-15+ años)',
-      sessions: '2 a 3 citas clínicas',
-      material: 'Disilicato de litio y cerámica feldespática estratificada',
-      overview:
-        'Láminas ultrafinas de porcelana diseñadas digitalmente según tus proporciones faciales, textura dental natural y traslucidez incisal para un acabado imperceptible.',
-    },
+      'Hola, quisiera agendar mi valoración para Diseño en Cerámica en Natural.',
   },
   {
     id: 'directa',
     badge: 'Resina directa',
     title: 'Diseño en Resina Directa',
-    description: '',
+    description: 'Diseño de sonrisa en resina directa, con atención personalizada para tu caso.',
     image: null,
     alt: '',
     ctaText: 'Consultar resina directa',
     whatsappText:
-      'Hola, quisiera consultar por Diseño en Resina Directa en Natural.',
-    details: null,
+      'Hola, quisiera agendar mi valoración para Diseño en Resina Directa en Natural.',
   },
   {
     id: 'ortodoncia',
@@ -94,14 +74,7 @@ const TREATMENTS: Treatment[] = [
     alt: 'Ortodoncia estética y funcional para alineación dental',
     ctaText: 'Consultar ortodoncia',
     whatsappText:
-      'Hola, quisiera consultar por Ortodoncia en Natural.',
-    details: {
-      duration: 'Planificado según diagnóstico 3D',
-      sessions: 'Controles mensuales personalizados',
-      material: 'Alineadores invisibles, brackets de autoligado y zafiro',
-      overview:
-        'Alineación biomecánica que armoniza la mordida, protege la articulación temporomandibular y prepara la arquitectura dental para una sonrisa saludable.',
-    },
+      'Hola, quisiera agendar mi valoración para Ortodoncia en Natural.',
   },
   {
     id: 'general',
@@ -112,14 +85,7 @@ const TREATMENTS: Treatment[] = [
     alt: 'Odontología general y salud oral integral en Natural',
     ctaText: 'Agendar mi cita',
     whatsappText:
-      'Hola, quisiera consultar por Odontología General en Natural.',
-    details: {
-      duration: 'Prevención y rehabilitación continua',
-      sessions: 'Desde 1 sesión clínica',
-      material: 'Resinas de nanotecnología y profilaxis ultrasónica',
-      overview:
-        'Diagnóstico preventivo, restauraciones biomiméticas, periodoncia e higiene clínica avanzada bajo un enfoque libre de dolor y estrés.',
-    },
+      'Hola, quisiera agendar mi valoración para Odontología General en Natural.',
   },
 ];
 
@@ -187,14 +153,9 @@ const FAQS: FaqItem[] = [
   {
     id: 4,
     question: '¿Dónde están ubicados?',
-    answer: 'Cl. 7a #9-60, San Carlos, Valledupar.',
+    answer: 'Calle 7B # 9-60, Barrio San Carlos, Valledupar, Colombia.',
   },
 ];
-
-const LOGO_URL =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuAtl4qZ4hQaGlRc7BPueCg9a4BFyz6icZbfJAUoQhZ1Betf3kwuWUneFpsA8sQ7YXSeAbjYqWE4UG2YeBceFWZ0d6_puBIjt0daQbqSzctFSgi207bwPPWKAtUUKwl398HB3a6Ua4q5oPxsltslZHFlnD59Qrlajs9VL1mmksyJd593DiJ0288KZapY2av_QLaKd2PjHhuSBPktgJgjHic5xy7u2TKFXev0_u7J2Ktd_7YMdPNpdKnqjMyxaXnfhaKJlH8';
-
-
 
 const BG_PHOTOS = [
   { src: '/clinic/recepcion.jpg', alt: 'Recepción de Natural by Roberto Cuello', hideOnMobile: false },
@@ -210,6 +171,8 @@ function WhatsAppIcon({ className = 'w-5 h-5 fill-current' }: { className?: stri
 }
 
 export default function App() {
+  const [partnersPage, setPartnersPage] = useState(() => window.location.hash === '#/aliados-y-convenios');
+  const landingTitle = useRef(document.title);
   const [openFaqId, setOpenFaqId] = useState<number | null>(null);
   const [activeDot, setActiveDot] = useState<number>(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
@@ -222,6 +185,29 @@ export default function App() {
   const trackRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
   const menuToggleRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const updatePage = () => {
+      setPartnersPage(window.location.hash === '#/aliados-y-convenios');
+      setMobileMenuOpen(false);
+    };
+    window.addEventListener('hashchange', updatePage);
+    return () => window.removeEventListener('hashchange', updatePage);
+  }, []);
+
+  useLayoutEffect(() => {
+    document.title = partnersPage
+      ? 'Aliados médicos y convenios — Natural by Roberto Cuello'
+      : landingTitle.current;
+    if (partnersPage) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      document.getElementById('partners-page')?.focus({ preventScroll: true });
+    } else {
+      const target = document.getElementById(window.location.hash.slice(1));
+      if (target) target.scrollIntoView({ behavior: 'instant', block: 'start' });
+      else window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [partnersPage]);
 
   useEffect(() => {
     if (!mobileMenuOpen) return;
@@ -323,9 +309,10 @@ export default function App() {
       }
     };
 
+    handleScroll();
     track.addEventListener('scroll', handleScroll, { passive: true });
     return () => track.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [partnersPage]);
 
   return (
     <div className="natural-page min-h-screen font-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container relative">
@@ -361,6 +348,13 @@ export default function App() {
               href="#turismo-medico"
             >
               Turismo médico
+            </a>
+            <a
+              className="font-label-lg text-[13px] tracking-[0.06em] text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap"
+              href="#/aliados-y-convenios"
+              aria-current={partnersPage ? 'page' : undefined}
+            >
+              Aliados y convenios
             </a>
             <a
               className="font-label-lg text-[13px] tracking-[0.06em] text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap"
@@ -421,6 +415,14 @@ export default function App() {
             <a
               onClick={() => setMobileMenuOpen(false)}
               className="font-label-lg text-sm font-medium text-on-surface py-1.5"
+              href="#/aliados-y-convenios"
+              aria-current={partnersPage ? 'page' : undefined}
+            >
+              Aliados y convenios
+            </a>
+            <a
+              onClick={() => setMobileMenuOpen(false)}
+              className="font-label-lg text-sm font-medium text-on-surface py-1.5"
               href="#testimonios"
             >
               Testimonios
@@ -446,6 +448,7 @@ export default function App() {
         )}
       </header>
 
+      {partnersPage ? <PartnersPage /> : <>
       <main className="w-full pt-20">
         <div className="flex flex-col w-full text-on-surface">
           {/* PORTADA: RECEPCIÓN REAL, VIDRIO LEGIBLE Y CONSULTORIO ELEGIDO */}
@@ -978,71 +981,60 @@ export default function App() {
 
           {/* PIE DE PÁGINA ESPECIFICADO */}
           <section
-            className="natural-glass w-full bg-white/70 backdrop-blur-md border-t border-white/60 py-14 scroll-mt-20"
+            className="natural-glass contact-section w-full bg-white/70 backdrop-blur-md border-t border-white/60 py-14 scroll-mt-20"
             id="contacto"
           >
             <div className="max-w-7xl mx-auto px-6 lg:px-margin-desktop flex flex-col gap-10">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center md:text-left">
                 {/* Logo y eslogan */}
                 <div className="flex flex-col items-center md:items-start gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-1 rounded-full bg-surface-container-low/70">
-                      <img
-                        alt="Logo Natural by Roberto Cuello"
-                        className="w-10 h-10 rounded-full object-contain"
-                        src={LOGO_URL}
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-                    <div className="flex flex-col text-left">
-                      <span className="font-headline-sm text-base font-semibold text-on-surface">
-                        Natural
-                      </span>
-                      <span className="font-label-sm text-[10px] text-outline">
-                        by Roberto Cuello
-                      </span>
-                    </div>
-                  </div>
-                  <p className="font-body-md text-xs sm:text-sm text-on-surface-variant italic text-center md:text-left">
+                  <a className="contact-section__brand" href="#" aria-label="Natural by Roberto Cuello — Inicio">
+                    <svg viewBox="555 1995 3391 710" aria-hidden="true" focusable="false">
+                      <image href="/brand/natural-logo-47.png" width="4501" height="4501" />
+                    </svg>
+                  </a>
+                  <p className="font-body-md text-sm text-on-surface-variant italic text-center md:text-left">
                     “Tu salud, nuestra esencia”
                   </p>
                 </div>
 
                 {/* Ubicación */}
                 <div className="flex flex-col items-center md:items-start gap-3">
-                  <span className="font-title-md text-xs sm:text-sm font-bold text-on-surface">
+                  <span className="font-title-md text-sm font-bold text-on-surface">
                     Ubicación
                   </span>
-                  <div className="flex items-center md:items-start gap-2.5 text-on-surface-variant font-body-md text-xs sm:text-sm text-center md:text-left">
+                  <div className="flex items-center md:items-start gap-2.5 text-on-surface-variant font-body-md text-sm text-center md:text-left">
                     <span className="material-symbols-outlined text-lg text-primary flex-shrink-0">
                       location_on
                     </span>
-                    <span>Cl. 7a #9-60, San Carlos, Valledupar, Colombia</span>
+                    <span>Calle 7B # 9-60, Barrio San Carlos, Valledupar, Colombia</span>
                   </div>
                 </div>
 
-                {/* Horarios y Redes marcadores exactos */}
+                {/* Horarios aportados por la clínica */}
                 <div className="flex flex-col items-center md:items-start gap-3">
-                  <span className="font-title-md text-xs sm:text-sm font-bold text-on-surface">
-                    Información
+                  <span className="font-title-md text-sm font-bold text-on-surface">
+                    Horarios de atención
                   </span>
-                  <div className="flex flex-col gap-2 font-body-sm text-xs text-on-surface-variant w-full max-w-[200px]">
-                    <span className="p-2 rounded bg-surface-container-low/80 inline-block font-medium text-center">
-                      [Horarios por definir]
-                    </span>
-                    <span className="p-2 rounded bg-surface-container-low/80 inline-block font-medium text-center">
-                      [Redes sociales por definir]
-                    </span>
-                  </div>
+                  <dl className="flex flex-col gap-3 font-body-md text-sm leading-relaxed text-on-surface-variant">
+                    <div>
+                      <dt className="font-semibold">Lunes a viernes</dt>
+                      <dd>08:30–12:00<br />14:00–18:00</dd>
+                    </div>
+                    <div>
+                      <dt className="font-semibold">Sábados</dt>
+                      <dd>08:00–12:30</dd>
+                    </div>
+                  </dl>
                 </div>
 
                 {/* Contacto Directo */}
                 <div className="flex flex-col items-center md:items-start gap-3">
-                  <span className="font-title-md text-xs sm:text-sm font-bold text-on-surface">
+                  <span className="font-title-md text-sm font-bold text-on-surface">
                     Contacto directo
                   </span>
                   <a
-                    className="inline-flex items-center gap-2 text-on-surface hover:text-primary transition-colors font-body-md text-xs sm:text-sm font-semibold"
+                    className="inline-flex items-center gap-2 text-on-surface hover:text-primary transition-colors font-body-md text-sm font-semibold"
                     href="https://wa.me/573124549968"
                     rel="noopener noreferrer"
                     target="_blank"
@@ -1052,9 +1044,18 @@ export default function App() {
                     </span>
                     <span>+57 312 4549968</span>
                   </a>
-                  <span className="font-body-sm text-xs text-on-surface-variant text-center md:text-left">
+                  <span className="font-body-md text-sm text-on-surface-variant text-center md:text-left">
                     Atención personalizada y agendamiento vía WhatsApp
                   </span>
+                  <a
+                    className="contact-section__social font-body-md text-sm text-on-surface underline underline-offset-4"
+                    href="https://www.instagram.com/naturalbyrobertocuello/"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    aria-label="Instagram de Natural: @naturalbyrobertocuello"
+                  >
+                    Instagram · @naturalbyrobertocuello
+                  </a>
                 </div>
               </div>
 
@@ -1121,6 +1122,7 @@ export default function App() {
           </p>
         </div>
       </footer>
+      </>}
 
       {/* RESEÑA, RETRATO Y CIFRAS: DIÁLOGO MODAL NATIVO */}
       <dialog
@@ -1275,17 +1277,13 @@ export default function App() {
             <div className="treatment-dialog__image" aria-hidden="true" />
             <div className="treatment-dialog__body">
               {selectedTreatment.description && <p>{selectedTreatment.description}</p>}
-              {selectedTreatment.details && <>
-                <p>{selectedTreatment.details.overview}</p>
-                <dl className="treatment-dialog__facts">
-                  <div><dt>Tiempo estimado</dt><dd>{selectedTreatment.details.sessions}</dd></div>
-                  <div><dt>Durabilidad / Enfoque</dt><dd>{selectedTreatment.details.duration}</dd></div>
-                  <div><dt>Tecnología y Biomateriales</dt><dd>{selectedTreatment.details.material}</dd></div>
-                </dl>
-              </>}
+              <section className="treatment-dialog__assessment" aria-label="Valoración personalizada">
+                <h3>Primero, tu valoración</h3>
+                <p>La duración del tratamiento y de sus resultados, el número de citas y los materiales se definen según cada caso clínico. Agenda tu valoración para conocer el plan más adecuado para ti.</p>
+              </section>
               <a className="treatment-dialog__cta" href={`https://wa.me/573124549968?text=${encodeURIComponent(selectedTreatment.whatsappText)}`} target="_blank" rel="noopener noreferrer">
                 <WhatsAppIcon className="w-4 h-4 fill-current" />
-                <span>{selectedTreatment.ctaText}</span>
+                <span>Agendar mi valoración</span>
               </a>
             </div>
           </>}
