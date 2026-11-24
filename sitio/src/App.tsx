@@ -6,13 +6,20 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import ClinicCarousel from './components/ClinicCarousel';
 import PartnersPage from './components/PartnersPage';
+import TreatmentGallery from './components/TreatmentGallery';
+import TreatmentPhoto, { type PhotoRotation } from './components/TreatmentPhoto';
+import PatientExperienceDialog from './components/PatientExperienceDialog';
 
 interface Treatment {
   id: string;
   badge: string;
   title: string;
   description: string;
-  image: string | null;
+  image: string;
+  gallery: string[];
+  imageRotation?: PhotoRotation;
+  // Gallery rotations use the original, one-based photo numbers.
+  galleryRotations?: Partial<Record<number, PhotoRotation>>;
   alt: string;
   ctaText: string;
   whatsappText: string;
@@ -33,55 +40,54 @@ interface FaqItem {
 
 const TREATMENTS: Treatment[] = [
   {
-    id: 'indirecta',
-    badge: 'Técnica indirecta',
-    title: 'Diseño en Resina Indirecta',
-    description: 'Precisión y durabilidad para una sonrisa que perdura.',
-    image: null,
-    alt: 'Diseño de sonrisa en técnica indirecta de alta precisión',
-    ctaText: 'Quiero mi diseño de sonrisa',
-    whatsappText:
-      'Hola, quisiera agendar mi valoración para Diseño en Resina Indirecta en Natural.',
-  },
-  {
     id: 'ceramica',
     badge: 'Carillas cerámicas',
     title: 'Diseño en Cerámica',
     description: 'Un resultado natural y armónico, hecho a tu medida.',
-    image: null,
+    image: '/treatments/ceramica/portada.jpg',
+    imageRotation: 180,
+    galleryRotations: { 2: 270, 3: 270, 6: 180 },
+    gallery: Array.from({ length: 6 }, (_, index) => `/treatments/ceramica/${String(index + 1).padStart(2, '0')}.jpg`),
     alt: 'Diseño de sonrisa en cerámica realizado por el Dr. Roberto Cuello',
     ctaText: 'Quiero mi diseño en cerámica',
     whatsappText:
       'Hola, quisiera agendar mi valoración para Diseño en Cerámica en Natural.',
   },
   {
+    id: 'indirecta',
+    badge: 'Técnica indirecta',
+    title: 'Diseño en Resina Indirecta',
+    description: 'Precisión y durabilidad para una sonrisa que perdura.',
+    image: '/treatments/indirecta/portada.jpg',
+    galleryRotations: { 2: 90, 7: 90 },
+    gallery: Array.from({ length: 7 }, (_, index) => `/treatments/indirecta/${String(index + 1).padStart(2, '0')}.jpg`),
+    alt: 'Diseño de sonrisa en técnica indirecta de alta precisión',
+    ctaText: 'Quiero mi diseño de sonrisa',
+    whatsappText:
+      'Hola, quisiera agendar mi valoración para Diseño en Resina Indirecta en Natural.',
+  },
+  {
     id: 'directa',
     badge: 'Resina directa',
     title: 'Diseño en Resina Directa',
     description: 'Diseño de sonrisa en resina directa, con atención personalizada para tu caso.',
-    image: null,
-    alt: '',
+    image: '/treatments/directa/portada.jpg',
+    imageRotation: 180,
+    galleryRotations: { 1: 90, 2: 90, 3: 90 },
+    gallery: Array.from({ length: 5 }, (_, index) => `/treatments/directa/${String(index + 1).padStart(2, '0')}.jpg`),
+    alt: 'Diseño de sonrisa en resina directa',
     ctaText: 'Consultar resina directa',
     whatsappText:
       'Hola, quisiera agendar mi valoración para Diseño en Resina Directa en Natural.',
-  },
-  {
-    id: 'ortodoncia',
-    badge: 'Ortodoncia estética',
-    title: 'Ortodoncia',
-    description: 'Una sonrisa alineada y saludable, para ti o tu familia.',
-    image: null,
-    alt: 'Ortodoncia estética y funcional para alineación dental',
-    ctaText: 'Consultar ortodoncia',
-    whatsappText:
-      'Hola, quisiera agendar mi valoración para Ortodoncia en Natural.',
   },
   {
     id: 'general',
     badge: 'Salud integral',
     title: 'Odontología General',
     description: 'Cuidado integral de tu salud oral en un solo lugar.',
-    image: null,
+    image: '/treatments/general/portada.jpg',
+    galleryRotations: { 4: 90, 5: 90 },
+    gallery: Array.from({ length: 5 }, (_, index) => `/treatments/general/${String(index + 1).padStart(2, '0')}.jpg`),
     alt: 'Odontología general y salud oral integral en Natural',
     ctaText: 'Agendar mi cita',
     whatsappText:
@@ -177,6 +183,8 @@ export default function App() {
   const [activeDot, setActiveDot] = useState<number>(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [doctorOpen, setDoctorOpen] = useState(false);
+  const [patientsOpen, setPatientsOpen] = useState(false);
+  const patientsTriggerRef = useRef<HTMLElement | null>(null);
   const doctorDialogRef = useRef<HTMLDialogElement>(null);
   const doctorBackdropPressRef = useRef(false);
   const [selectedTreatment, setSelectedTreatment] = useState<Treatment | null>(null);
@@ -185,6 +193,12 @@ export default function App() {
   const trackRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
   const menuToggleRef = useRef<HTMLButtonElement>(null);
+
+  const openPatientExperience = (event: React.MouseEvent<HTMLButtonElement>) => {
+    patientsTriggerRef.current = event.currentTarget;
+    setMobileMenuOpen(false);
+    setPatientsOpen(true);
+  };
 
   useEffect(() => {
     const updatePage = () => {
@@ -343,12 +357,15 @@ export default function App() {
             >
               Tratamientos
             </a>
-            <a
-              className="font-label-lg text-[13px] tracking-[0.06em] text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap"
-              href="#turismo-medico"
+            <button
+              type="button"
+              className="site-header__patients font-label-lg text-[13px] tracking-[0.06em] text-on-surface-variant hover:text-on-surface transition-colors"
+              aria-haspopup="dialog"
+              aria-controls="patient-experience-dialog"
+              onClick={openPatientExperience}
             >
-              Turismo médico
-            </a>
+              Pacientes nacionales e internacionales
+            </button>
             <a
               className="font-label-lg text-[13px] tracking-[0.06em] text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap"
               href="#/aliados-y-convenios"
@@ -405,13 +422,15 @@ export default function App() {
             >
               Tratamientos
             </a>
-            <a
-              onClick={() => setMobileMenuOpen(false)}
+            <button
+              type="button"
+              onClick={openPatientExperience}
               className="font-label-lg text-sm font-medium text-on-surface py-1.5"
-              href="#turismo-medico"
+              aria-haspopup="dialog"
+              aria-controls="patient-experience-dialog"
             >
-              Turismo médico
-            </a>
+              Pacientes nacionales e internacionales
+            </button>
             <a
               onClick={() => setMobileMenuOpen(false)}
               className="font-label-lg text-sm font-medium text-on-surface py-1.5"
@@ -458,7 +477,6 @@ export default function App() {
             </div>
             <div className="natural-hero__layout">
               <div className="natural-hero__glass">
-                <p className="natural-hero__kicker">Tu salud, nuestra esencia</p>
                 <h1 className="font-headline-lg font-bold natural-title natural-title--hero">
                   <span className="natural-title__lead">TU SONRISA,</span>{' '}
                   <span className="natural-title__continuation">CON LA NATURALIDAD QUE TE REPRESENTA</span>
@@ -500,11 +518,11 @@ export default function App() {
           {/* TRATAMIENTOS ESTRELLA */}
           <section className="w-full py-20 scroll-mt-20 relative" id="tratamientos">
             <div className="max-w-7xl mx-auto px-6 lg:px-margin-desktop">
-              <div className="natural-glass natural-section-intro max-w-2xl mx-auto text-center flex flex-col items-center gap-3 mb-14">
+              <div className="natural-glass natural-section-intro w-full max-w-2xl mx-auto text-center flex flex-col items-center gap-3 mb-14">
                 <span className="font-label-md text-[11px] text-secondary font-semibold tracking-wider">
                   Excelencia clínica • Arte dental
                 </span>
-                <h2 className="font-headline-lg font-bold text-on-surface text-center natural-title natural-title--section">
+                <h2 className="w-full font-headline-lg font-bold text-on-surface text-center natural-title natural-title--section">
                   TRATAMIENTOS ESTRELLA
                 </h2>
                 <p className="font-body-lg text-sm sm:text-base text-on-surface-variant text-center max-w-xl">
@@ -519,7 +537,9 @@ export default function App() {
                     key={item.id}
                     className="treatment-card natural-glass group flex flex-col bg-white/80 backdrop-blur-md border border-white/80 ring-1 ring-[#D4AF7F]/20 rounded-3xl overflow-hidden shadow-[0_10px_25px_rgba(46,42,38,0.04)] hover:shadow-[0_16px_36px_rgba(212,175,127,0.18)] hover:-translate-y-1.5 transition-all duration-300 text-center"
                   >
-                    <div className="treatment-card__image" aria-hidden="true" />
+                    <div className="treatment-card__image">
+                      <TreatmentPhoto src={item.image} alt={item.alt} rotation={item.imageRotation} loading="lazy" />
+                    </div>
 
                     <div className="p-6 flex flex-col flex-1 justify-between items-center gap-5">
                       <div className="flex flex-col items-center gap-2.5">
@@ -559,6 +579,16 @@ export default function App() {
                     </div>
                   </div>
                 ))}
+              </div>
+              <div className="treatment-specialties natural-glass" role="region" aria-labelledby="other-specialties-title">
+                <h3 id="other-specialties-title" className="font-headline-sm font-bold text-on-surface">OTRAS ESPECIALIDADES</h3>
+                <ul className="treatment-specialties__list">
+                  <li>Ortodoncia</li>
+                  <li>Endodoncia</li>
+                  <li>Periodoncia</li>
+                  <li>Cirugía Oral</li>
+                  <li>Rehabilitación Oral</li>
+                </ul>
               </div>
             </div>
           </section>
@@ -713,76 +743,6 @@ export default function App() {
                 >
                   <span>Iniciar mi proceso hoy</span>
                   <span className="material-symbols-outlined text-lg">arrow_forward</span>
-                </a>
-              </div>
-            </div>
-          </section>
-
-          {/* TURISMO MÉDICO */}
-          <section className="w-full py-space-xl scroll-mt-20" id="turismo-medico">
-            <div className="max-w-5xl mx-auto px-6 lg:px-margin-desktop">
-              <div className="natural-glass bg-white/80 backdrop-blur-md border border-white/80 p-8 sm:p-12 lg:p-16 rounded-3xl shadow-md flex flex-col items-center text-center gap-7 ring-1 ring-outline-variant/25">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-secondary-container/60 text-secondary border border-white/60">
-                  <span className="material-symbols-outlined text-base">flight_takeoff</span>
-                  <span className="font-label-sm text-[11px] font-semibold">
-                    Pacientes internacionales
-                  </span>
-                </div>
-
-                <h2 className="font-headline-lg font-bold text-3xl sm:text-4xl text-on-surface leading-tight max-w-2xl text-center">
-                  Tu nueva sonrisa, desde cualquier lugar del mundo
-                </h2>
-
-                <p className="font-body-lg text-sm sm:text-base text-on-surface-variant leading-relaxed max-w-2xl text-center">
-                  Estamos preparando programas para pacientes del exterior que desean
-                  transformar su sonrisa en Valledupar. Escríbenos y cuéntanos tu caso.
-                </p>
-
-                <div className="max-w-md w-full p-4 rounded-2xl bg-surface-container-low/80 border border-white/60 text-on-surface-variant flex items-center justify-center gap-3 text-center">
-                  <span className="material-symbols-outlined text-primary text-lg flex-shrink-0">
-                    info
-                  </span>
-                  <span className="font-body-md text-xs sm:text-sm font-medium">
-                    [Detalles del paquete de turismo médico por definir]
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl pt-2">
-                  <div className="natural-glass-inset bg-white/70 backdrop-blur-sm border border-white/60 p-6 rounded-2xl flex flex-col items-center text-center gap-2">
-                    <div className="flex items-center gap-2 text-secondary">
-                      <span className="material-symbols-outlined text-lg">schedule</span>
-                      <span className="font-title-md text-xs sm:text-sm font-bold text-on-surface">
-                        Tiempos optimizados
-                      </span>
-                    </div>
-                    <p className="font-body-sm text-xs text-on-surface-variant text-center leading-relaxed">
-                      Sesiones continuas y planificadas para que aproveches tu estancia en la
-                      ciudad mientras renuevas tu sonrisa.
-                    </p>
-                  </div>
-
-                  <div className="natural-glass-inset bg-white/70 backdrop-blur-sm border border-white/60 p-6 rounded-2xl flex flex-col items-center text-center gap-2">
-                    <div className="flex items-center gap-2 text-secondary">
-                      <span className="material-symbols-outlined text-lg">support_agent</span>
-                      <span className="font-title-md text-xs sm:text-sm font-bold text-on-surface">
-                        Acompañamiento VIP
-                      </span>
-                    </div>
-                    <p className="font-body-sm text-xs text-on-surface-variant text-center leading-relaxed">
-                      Orientación personalizada desde tu llegada a Valledupar hasta tu retorno
-                      seguro a casa.
-                    </p>
-                  </div>
-                </div>
-
-                <a
-                  className="inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-primary-container text-on-primary-container font-label-lg text-[13px] font-bold hover:brightness-95 transition-all shadow-md mt-2"
-                  href="https://wa.me/573124549968?text=Hola,%20quisiera%20consultar%20mi%20plan%20de%20viaje%20y%20turismo%20m%C3%A9dico%20en%20Natural."
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  <span className="material-symbols-outlined text-lg">travel_explore</span>
-                  <span>Consulta tu plan de viaje</span>
                 </a>
               </div>
             </div>
@@ -1056,11 +1016,20 @@ export default function App() {
                   >
                     Instagram · @naturalbyrobertocuello
                   </a>
+                  <a
+                    className="contact-section__social font-body-md text-sm text-on-surface underline underline-offset-4"
+                    href="https://www.instagram.com/dr.robertocuellop/"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    aria-label="Instagram del Dr. Roberto Cuello: @dr.robertocuellop"
+                  >
+                    Instagram · @dr.robertocuellop
+                  </a>
                 </div>
               </div>
 
               <div className="pt-8 border-t border-outline-variant/30 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] font-body-sm text-outline text-center sm:text-left">
-                <span>© 2025 Natural by Roberto Cuello. Todos los derechos reservados.</span>
+                <span>© Natural by Roberto Cuello. Todos los derechos reservados.</span>
                 <span>Clínica de Estética Dental y Odontología Integral</span>
               </div>
             </div>
@@ -1102,27 +1071,32 @@ export default function App() {
             >
               Tratamientos
             </a>
-            <a
+            <button
+              type="button"
               className="font-label-md text-xs text-on-surface-variant hover:text-on-surface transition-colors"
-              href="#turismo-medico"
+              aria-haspopup="dialog"
+              aria-controls="patient-experience-dialog"
+              onClick={openPatientExperience}
             >
-              Turismo médico
-            </a>
+              Pacientes nacionales e internacionales
+            </button>
             <a
               className="font-label-md text-xs text-on-primary-container font-semibold hover:underline"
               href="https://wa.me/573124549968"
               rel="noopener noreferrer"
               target="_blank"
             >
-              Concierge VIP
+              Escríbenos
             </a>
           </div>
           <p className="font-body-sm text-xs text-outline">
-            © 2025 Natural. Todos los derechos reservados.
+            © Natural. Todos los derechos reservados.
           </p>
         </div>
       </footer>
       </>}
+
+      <PatientExperienceDialog open={patientsOpen} onClose={() => setPatientsOpen(false)} triggerRef={patientsTriggerRef} fallbackFocusRef={menuToggleRef} />
 
       {/* RESEÑA, RETRATO Y CIFRAS: DIÁLOGO MODAL NATIVO */}
       <dialog
@@ -1231,7 +1205,7 @@ export default function App() {
         </div>
       </dialog>
 
-      {/* INFORMACIÓN DE TRATAMIENTOS: DIÁLOGO NATIVO, SIN FOTOGRAFÍAS ASIGNADAS */}
+      {/* INFORMACIÓN DE TRATAMIENTOS: FOTOGRAFÍAS EN EL ORDEN INDICADO POR EL PROPIETARIO */}
       <dialog
         ref={treatmentDialogRef}
         id="treatment-dialog"
@@ -1274,7 +1248,7 @@ export default function App() {
         </div>
         <div className="doctor-dialog__scroll" tabIndex={0} role="region" aria-label="Información del tratamiento">
           {selectedTreatment && <>
-            <div className="treatment-dialog__image" aria-hidden="true" />
+            <TreatmentGallery key={selectedTreatment.id} title={selectedTreatment.title} images={selectedTreatment.gallery} rotations={TREATMENTS.find((item) => item.id === selectedTreatment.id)?.galleryRotations} />
             <div className="treatment-dialog__body">
               {selectedTreatment.description && <p>{selectedTreatment.description}</p>}
               <section className="treatment-dialog__assessment" aria-label="Valoración personalizada">
